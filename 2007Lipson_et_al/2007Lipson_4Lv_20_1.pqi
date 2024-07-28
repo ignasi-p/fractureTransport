@@ -1,0 +1,149 @@
+
+#DATABASE D:/OneDrive/Documents/Geokemi/Modelling/PhreeqC/Databases/phreeqc_3.7.3.dat
+
+TITLE .
+!------------------------------------------------------------------------
+Lipson, D.S., McCray, J.E., Thyne, G.D., 2007.
+Using PHREEQC to simulate solute transport in fractured bedrock.
+Ground water 45, 468-472. https://doi.org/10.1111/j.1745-6584.2007.00318.x
+.
+A single row of mobile cells (fracture) and the bedrock matrix adjacent to
+the fracture is simulated as an array of five layers of stagnant cells.
+.
+The bedrock model is 3 m long, discretized into 200 cells (Delta-x = 0.015 m).
+Parallel fractures with appertures 0.4 mm are 0.5 m apart.  The symmetry results
+in a fracture with half-apperture, 0.2mm, and half-spacing of 0.25m, with the
+rock matrix discretized into 5 cells. The porosity of the matrix is 0.20.
+.
+The reported groundwater velocity is 1.5 m/day or 560 m/yr.
+.
+Three tracers: input, fracture and rock matrix
+'Ti_', 'Tf_', and 'Tm_'.
+!------------------------------------------------------------------------
+
+SOLUTION_MASTER_SPECIES
+Ti_                 Ti_         0.0     Ti_                 1.
+Tf_                 Tf_         0.0     Tf_                 1.
+Tm_                 Tm_         0.0     Tm_                 1.
+
+SOLUTION_SPECIES
+Ti_ = Ti_
+        log_k   0.0
+Tf_ = Tf_
+        log_k   0.0
+Tm_ = Tm_
+        log_k   0.0
+CO3-2 + 10 H+ + 8 e- = CH4 + 3 H2O
+	-log_k   -9999   # eliminate the formation of methane
+	-delta_h  0
+
+USER_PRINT
+-start
+ 10 Vol_soln = SOLN_VOL # (liters)
+ 20 density = RHO # kg_s/L
+ 30 Water_mass = TOT("water") # kg_w
+ 40 Vol_soln = SOLN_VOL # L
+ 50 Mass_soln = Vol_soln * density
+100 PRINT ".*********************************************************************************"
+110 PRINT "density = ",TRIM(STR_F$(density,20,5))," kg/L"
+120 PRINT "Vol_soln = ",TRIM(STR_F$(Vol_soln,20,5))," L"
+130 PRINT "Mass_soln = ",TRIM(STR_F$(Mass_soln,20,5))," kg"
+140 PRINT "H2O = ",TRIM(STR_F$(Water_mass,20,5))," kg"
+200 yr = CALC_VALUE("Years")
+210 IF(yr > 3.155e-7) THEN PRINT "Years =",TRIM(STR_F$(yr,20,5)) 
+220 PRINT "STEP_NO =",STEP_NO, "   CELL_NO =",CELL_NO
+999 PRINT "-*********************************************************************************"
+-end
+
+CALCULATE_VALUES
+Hours
+  -start
+    10 SAVE SIM_TIME/3600
+  -end
+Days
+  -start
+    10 SAVE SIM_TIME/86400
+  -end
+Years
+  -start
+    10 SAVE SIM_TIME/31556952
+  -end
+
+SOLUTION 0  Inflowing water: Pure water with a tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Ti_       1e-6
+    -water    1 # kg
+END
+SOLUTION 1-21 Fracture water: Pure water with a tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Tf_       1e-6
+    -water    1 # kg
+END
+
+SOLUTION 22-101 Matrix water: Pure water with a tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Tm_       1e-6
+    -water    1 # kg
+END
+
+#PRINT
+#   -reset false
+#   -echo_input true
+#   -status false
+
+INCLUDE$ 2007Lipson_4Lv_20_1_MIX.pqi
+
+TRANSPORT
+   -cells  20
+   -lengths  20*0.15  # m
+   -dispersivities  20*0.001 # m
+   -time_step 8460.0 # s
+   -shifts 1022
+   -flow_direction  forward
+   -boundary_conditions   flux  flux
+   -correct_disp true
+   -diffusion_coefficient 0 # m2/s
+   -porosity 20*0.00080  80*0.20000
+   -stagnant   4
+   -punch_frequency   1
+   -print_frequency   204
+  
+SELECTED_OUTPUT
+   -file   2007Lipson_4Lv_20_1.tsv
+   -reset  false
+   -distance  true
+   -solution
+
+USER_PUNCH
+   -headings dist_z Ti_fr Tf_fr Tm_fr Days
+-start
+  10 IF (CELL_NO >= 0 AND CELL_NO <= 21) THEN PUNCH 0
+  15 IF (CELL_NO >= 22 AND CELL_NO <= 41) THEN PUNCH  0.0052
+  20 IF (CELL_NO >= 42 AND CELL_NO <= 61) THEN PUNCH  0.0252
+  25 IF (CELL_NO >= 62 AND CELL_NO <= 81) THEN PUNCH  0.0752
+  30 IF (CELL_NO >= 82 AND CELL_NO <= 101) THEN PUNCH  0.1802
+  35 PUNCH TOT("Ti_")/1e-6,TOT("Tf_")/1e-6,TOT("Tm_")/1e-6,CALC_VALUE("Days")
+-end
+
+END
+PRINT
+   -reset true
+END

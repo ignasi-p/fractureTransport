@@ -1,0 +1,215 @@
+
+#DATABASE D:/OneDrive/Documents/Geokemi/Modelling/PhreeqC/Databases/phreeqc_3.7.3.dat
+
+TITLE .
+!------------------------------------------------------------------------
+Muskus and Falta 2018. Semi-analytical method for matrix diffusion in heterogeneous
+and fractured systems with parent-daughter reactions. Journal of Contaminant
+Hydrology, 218, 94-109. https://doi.org/10.1016/j.jconhyd.2018.10.002.
+.
+The inflow source is maintained for a period of 50 years, before it is removed,
+and the system is flushed with clean water for an additional 150 years.
+The advective transport velocity is 100 m/y.
+In the paper the model was set up as a 1-D system with 200 gridblocks using
+a gridblock spacing of 1 m, and a time-step of 0.1 yr.    The dispersivity in
+the Sudicky and Frind (1982) model was 0.5 m, but zero in their own model.
+.
+*** Here: 125 cells 126227.8021m long. Time step: 1.46 days. ***
+    numerical dispersivity: 0.200 m
+    dispersivity used in Phreeqc: 0.000 m
+.
+!------------------------------------------------------------------------
+
+SOLUTION_MASTER_SPECIES
+Cl_	    Cl_O4-    0.0     99.45       35.453
+N_      N_O3-     0.0     62.005      14.007
+
+SOLUTION_SPECIES
+Cl_O4- = Cl_O4-
+    log_k	0
+    -gamma  4.57  0.15
+N_O3- = N_O3-
+    log_k	0
+    -gamma  3.0  0
+CO3-2 + 10 H+ + 8 e- = CH4 + 3 H2O
+    -log_k   -9999   # eliminate the formation of methane
+    -delta_h  0
+
+EXCHANGE_SPECIES
+# For linear exchange, make ech exch. coeff. equal
+    Na+ + X- = NaX
+      -log_k   0.
+      -gamma   4.08   0.082
+    K+ + X- = KX
+      -log_k   0.
+      -gamma   3.5   0.015
+#
+USER_PRINT
+-start
+ 10 Vol_soln = SOLN_VOL # (liters)
+ 20 density = RHO # kg_s/L
+ 30 Water_mass = TOT("water") # kg_w
+ 40 Mass_soln = Vol_soln * density
+100 PRINT ".*********************************************************************************"
+110 PRINT "density = ",TRIM(STR_F$(density,20,5))," kg/L"
+120 PRINT "Vol_soln = ",TRIM(STR_F$(Vol_soln,20,5))," L"
+130 PRINT "Mass_soln = ",TRIM(STR_F$(Mass_soln,20,5))," kg"
+140 PRINT "H2O = ",TRIM(STR_F$(Water_mass,20,5))," kg"
+200 yr = CALC_VALUE("Years")
+210 IF(yr > 3.155e-7) THEN PRINT "Years =",TRIM(STR_F$(yr,20,5)) 
+220 PRINT "STEP_NO =",STEP_NO, "   CELL_NO =",CELL_NO
+250 IF(TOT("X") <= 0) THEN GOTO 999
+260 PRINT "TOT(X)=",TOT("X"),", mol(X-)=",MOL("X-")
+270 PRINT "  mol(KX)=",MOL("KX"),",  mol(NaX)=",MOL("NaX"),",  mol(RbX)=",MOL("RbX")
+280 PRINT "  tot(K)= ",TOT("K"), ",  tot(Na)= ",TOT("Na"), ",  mol(Rb)= ",MOL("Rb")
+999 PRINT "-*********************************************************************************"
+-end
+
+CALCULATE_VALUES
+Hours
+  -start
+    10 SAVE TOTAL_TIME/3600
+  -end
+Days
+  -start
+    10 SAVE TOTAL_TIME/86400
+  -end
+Years
+  -start
+    10 SAVE TOTAL_TIME/31556952
+  -end
+
+SOLUTION 1  Initial mobile (fracture) solution: Pure water with a KCl tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    K         1e-6
+    Cl        1e-6
+    -water    1 # kg
+END
+
+SOLUTION 127  Initial stagnant (rock matrix) solution: Pure water with a KClO4 tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    K         1e-6
+    Cl_       1e-6
+    -water    1 # kg
+EXCHANGE 127
+   -equilibrate  127
+   X          1.e-6
+END
+
+TITLE .
+Make copies of the exchanger and of the solutions
+
+COPY solution 1 1-126
+COPY solution 127 127-626
+COPY exchange 127 127-626
+
+END
+
+SOLUTION 0  Inflowing water: Pure water with a NaNO3 tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Na        1e-6
+    N_        1e-6
+    -water    1 # kg
+END
+
+TITLE .
+!------------------------------------------------------------------------
+50 years:
+The source is maintained for a period of 50 years, before it is removed,
+and the system is flushed with clean water for an additional 150 years.
+!------------------------------------------------------------------------
+
+SELECTED_OUTPUT
+   -file   M-F_4L_125_1_a=0.000.tsv
+   -reset  false
+   -distance  true
+   -solution  true
+   -pH                   true
+   -ionic_strength       true
+   -totals               Na N_ K Cl Cl_ X
+   -molalities           NaX KX X-
+
+USER_PUNCH
+   -headings dist_z  Na_fr  NO3_fr  K_fr  Cl_fr  ClO4_fr  Years
+-start
+  10 IF (CELL_NO >= 0 AND CELL_NO <= 126) THEN PUNCH 0
+  15 IF (CELL_NO >= 127 AND CELL_NO <= 251) THEN PUNCH  0.0313
+  20 IF (CELL_NO >= 252 AND CELL_NO <= 376) THEN PUNCH  0.0938
+  25 IF (CELL_NO >= 377 AND CELL_NO <= 501) THEN PUNCH  0.1563
+  30 IF (CELL_NO >= 502 AND CELL_NO <= 626) THEN PUNCH  0.2188
+  35 PUNCH TOT("Na")/1e-6,TOT("N_")/1e-6,TOT("K")/1e-6,TOT("Cl")/1e-6,TOT("Cl_")/1e-6,CALC_VALUE("Years")
+-end
+
+
+#PRINT
+#   -reset false
+#   -echo_input true
+#   -status false
+
+INCLUDE$ M-F_4L_125_1_a=0.000_MIX.pqi
+
+TRANSPORT
+   -cells  125
+   -lengths  125*0.4  # m
+   -dispersivities  125*0.0 # m
+   -time_step 126228 # s
+   -shifts 12500
+   -flow_direction  forward
+   -boundary_conditions   flux  flux
+   -correct_disp true
+   -diffusion_coefficient 1e-09 # m2/s
+   -porosity 125*0.00020  500*0.10000
+   -stagnant   4
+   -punch_frequency   500
+   -print_frequency   2500
+
+END
+
+TITLE .
+!------------------------------------------------------------------------
+150 years:
+The source is maintained for a period of 50 years, before it is removed,
+and the system is flushed with clean water for an additional 150 years.
+!------------------------------------------------------------------------
+
+SOLUTION 0 Inflowing water: Initial mobile (fracture) solution. Pure water with a KCl tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    K         1e-6
+    Cl        1e-6
+    -water    1 # kg
+SAVE solution 0
+END
+
+TRANSPORT
+   -shifts 37501
+   -punch_frequency   500
+   -print_frequency   2500
+   -initial_time  1577847525.6510673 # s
+END
+PRINT
+   -reset true
+END

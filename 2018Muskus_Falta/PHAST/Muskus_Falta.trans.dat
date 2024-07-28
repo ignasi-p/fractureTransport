@@ -1,0 +1,90 @@
+TITLE
+.       Pulse of solute, see Fig.1 in:
+.       Muskus and Falta 2018. Semi-analytical method for matrix diffusion in heterogeneous
+.       and fractured systems with parent-daughter reactions. Journal of Contaminant
+.       Hydrology, 218, 94-109. https://doi.org/10.1016/j.jconhyd.2018.10.002.
+
+SOLUTE_TRANSPORT true
+	-diffusivity  1e-009
+STEADY_FLOW true
+FREE_SURFACE_BC false
+SOLUTION_METHOD
+	-iterative_solver   true
+	-space_differencing 0.
+	-time_differencing  1.
+	-cross_dispersion   true
+	-rebalance_fraction 0.5
+	-rebalance_by_cell  true
+UNITS
+	-time                             s
+	-horizontal_grid                  m
+	-vertical_grid                    m
+	-head                             m
+	-hydraulic_conductivity           m/s
+	-specific_storage                 1/m
+	-dispersivity                     m
+GRID
+	-uniform X 0 50 401
+	-uniform Y 0 1 2
+	-nonuniform Z
+		0    4.8e-005    5.2e-005    5.8e-005    0.0166667
+		0.05    0.1    0.16667    0.25
+	-snap X 1e-005
+	-snap Y 1e-005
+	-snap Z 1e-007
+	-chemistry_dimensions XZ
+	-print_orientation XY
+MEDIA
+	-box 0 0 0 50. 1. 5.3e-5 GRID
+		-Kx                       0.01584437
+		-Ky                       0.01584437
+		-Kz                       0.01584437
+		-porosity                 1
+		-specific_storage         0
+		-long_dispersivity        0.001
+		-horizontal_dispersivity  0.001
+		-vertical_dispersivity    0.001
+	-box 0 0 5.3e-5 50. 1. 0.25 GRID
+		-Kx                       1.e-20
+		-Ky                       1.e-20
+		-Kz                       1.e-20
+		-porosity                 0.1
+		-specific_storage         0
+		-long_dispersivity        0.001
+		-horizontal_dispersivity  0.001
+		-vertical_dispersivity    0.001
+		-tortuosity               0.1
+SPECIFIED_HEAD_BC
+	-box 0 0 0 0 1. 0.25 GRID
+		-head
+			0	0.01
+		-associated_solution
+			0	3
+			50 years 1
+	-box 50. 0 0 50. 1. 0.25 GRID
+		-head
+			0	0
+		-associated_solution
+			0	1
+HEAD_IC
+	-box 0 0 0 50. 1. 0.25 GRID
+		-head   X 0.01 0 0 50.
+CHEMISTRY_IC
+	-box 0 0 0 50. 1. 4.9e-5
+		-solution            1
+	-box 0 0 4.9e-5 50 1 0.25 GRID
+		-solution            2
+		-exchange            2
+PRINT_FREQUENCY
+	-save_final_heads false
+	0
+		-HDF_chemistry          183    day
+		-xyz_chemistry          183    day
+		-hdf_intermediate       0
+	60
+		-velocities             end
+TIME_CONTROL
+	-time_step
+		0 10 day
+	-time_end
+		200 year

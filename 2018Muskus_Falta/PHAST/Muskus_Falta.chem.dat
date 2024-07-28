@@ -1,0 +1,99 @@
+TITLE .
+!------------------------------------------------------------------------
+Muskus and Falta 2018. Semi-analytical method for matrix diffusion in heterogeneous
+and fractured systems with parent-daughter reactions. Journal of Contaminant
+Hydrology, 218, 94-109. https://doi.org/10.1016/j.jconhyd.2018.10.002.
+.
+The inflow source is maintained for a period of 50 years, before it is removed,
+and the system is flushed with clean water for an additional 150 years.
+The advective transport velocity is 100 m/y.
+In the paper the model was set up as a 1-D system with 200 gridblocks using
+a gridblock spacing of 1 m, and a time-step of 0.1 yr.    The dispersivity in
+the Sudicky and Frind (1982) model was 0.5 m, but zero in their own model.
+!------------------------------------------------------------------------
+
+SOLUTION_MASTER_SPECIES
+Cl_	    Cl_O4-    0.0     99.45       35.453
+N_      N_O3-     0.0     62.005      14.007
+A       A         0       A           1
+
+SOLUTION_SPECIES
+A = A
+    log_k   0
+Cl_O4- = Cl_O4-
+    log_k	0
+    -gamma  4.57  0.15
+N_O3- = N_O3-
+    log_k	0
+    -gamma  3.0  0
+EXCHANGE_SPECIES
+# For linear exchange, make ech exch. coeff. equal
+    Na+ + X- = NaX
+      -log_k   0.
+      -gamma   4.08   0.082
+    K+ + X- = KX
+      -log_k   0.
+      -gamma   3.5   0.015
+
+SOLUTION 1  Initial mobile (fracture) solution: Pure water with a KCl tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1
+    O(0)      0
+    K         1e-6
+    Cl        1e-6
+    -water    1 # kg
+END
+
+SOLUTION 2  Initial stagnant (rock matrix) solution: Pure water with a KClO4 tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    K         1e-6
+    Cl_       1e-6
+    -water    1 # kg
+END
+EXCHANGE 2
+   -equilibrate  2
+   X          1.e-6
+END
+
+SOLUTION 3  Inflowing water: Pure water with a NaNO3 tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Na        1e-6
+    N_        1e-6
+    A         1e-3
+    -water    1 # kg
+END
+
+SELECTED_OUTPUT
+# Following the initial call to PHREEQC, selected output for initial and transient conditions are written 
+#  to prefix.chem.xyz.tsv.
+# Frequently, the SELECTED_OUTPUT data block is located at the end of the 'prefix.chem.dat' file,
+#  following an END keyword, which results in no data being written to the selected_output file.
+   -file dummy.sel
+   -reset false
+   -pH                   true
+   -totals               Na N_ K Cl Cl_ X
+   -molalities           NaX KX X-
+
+USER_PUNCH
+   -headings A Na NO3 K Cl ClO4
+-start
+  10 PUNCH TOT("A")/1e-3, TOT("Na")/1e-6, TOT("N_")/1e-6, TOT("K")/1e-6, TOT("Cl")/1e-6, TOT("Cl_")/1e-6
+-end
+END
+

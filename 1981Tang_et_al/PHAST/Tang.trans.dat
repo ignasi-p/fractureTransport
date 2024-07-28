@@ -1,0 +1,81 @@
+TITLE
+.       Pulse of solute (Example 1)
+SOLUTE_TRANSPORT true
+	-diffusivity  1e-009
+STEADY_FLOW true
+FREE_SURFACE_BC false
+SOLUTION_METHOD
+	-iterative_solver   true
+	-space_differencing 0.
+	-time_differencing  1.
+	-cross_dispersion   true
+UNITS
+	-time                             s
+	-horizontal_grid                  m
+	-vertical_grid                    m
+	-head                             m
+	-hydraulic_conductivity           m/s
+	-specific_storage                 1/m
+	-dispersivity                     m
+GRID
+	-uniform X 0 0.80 101
+	-uniform Y 0 0.01 2
+	-nonuniform Z
+		0    5.5e-005    6.5e-005    6.7e-005    0.0002
+		0.0006    0.0012    0.002    0.003
+	-snap X 1e-005
+	-snap Y 1e-005
+	-snap Z 1e-006
+	-chemistry_dimensions XZ
+	-print_orientation XY
+MEDIA
+	-box 0 0 0 0.80 0.01 0.000066 GRID
+		-Kx                       0.00069445
+		-Ky                       0.00069445
+		-Kz                       0.00069445
+		-porosity                 1
+		-specific_storage         0
+		-long_dispersivity        0.01
+		-horizontal_dispersivity  0.01
+		-vertical_dispersivity    0.000001
+	-box 0 0 0.000066 0.80 0.01 0.00306 GRID
+		-Kx                       1.e-20
+		-Ky                       1.e-20
+		-Kz                       1.e-20
+		-porosity                 0.35
+		-specific_storage         0
+		-long_dispersivity        0.01
+		-horizontal_dispersivity  0.01
+		-vertical_dispersivity    0.000001
+		-tortuosity               0.001
+SPECIFIED_HEAD_BC
+	-box 0 0 0 0 0.01 0.003 GRID
+		-head
+			0	0.01
+		-associated_solution
+			0	2
+	-box 0.80 0 0 0.80 0.01 0.003 GRID
+		-head
+			0	0
+		-associated_solution
+			0	1
+HEAD_IC
+	-box 0 0 0 0.80 0.01 0.003 GRID
+		-head                     X 0.01 0 0 0.80
+CHEMISTRY_IC
+	-box 0 0 0 0.80 0.01 0.003
+		-solution            1
+PRINT_FREQUENCY
+	-save_final_heads false
+	0
+		-HDF_chemistry          1    hour
+		-xyz_chemistry          1    hour
+		-hdf_intermediate       0
+	60
+		-force_chemistry_print  2    hour
+		-velocities             1    hour
+TIME_CONTROL
+	-time_step
+		0 1 hour
+	-time_end
+		4 day

@@ -1,0 +1,24 @@
+    1.0000                                            ;C0 (Source conc. at infinite time)
+    0.0000                                            ;CIM (Initial conc. in matrix and fractures)
+8.68056e-6                                            ;VELOCITY (m/s) ( = 0.75 m/day)
+    0.0000                                            ;ALPHA (DISPERSIVITY) (m)
+   0.00012                                            ;FRACTURE APERTURE (m)
+    0.10                                              ;FRACTURE SPACING (m)
+    0.35                                              ;MATRIX POROSITY
+    1.0000                                            ;TORTUOSITY
+   1.0E-11                                            ;DIFF. COEFF. (m2/s)
+    1.0                                               ;FRAC. RETARDATION
+    1.0                                               ;MAT. RETARDATION
+    0.0000                                            ;HALF-LIFE
+    1                                                 ;NX
+     0.600                                            ;X'S (m)
+    1                                                 ;NZ
+    0.
+    1                                                 ;NT
+  3.456E+5                                            ;T'S (s) ( = 4 days)
+    0.0000                                            ;ALPHR
+    1.E-06                                            ;RELERR
+   15                                                 ;N
+    1                                                 ;NS
+     0.000                                            ;TS'S (s) (= 0 days)
+     1.000                                            ;CSS'S

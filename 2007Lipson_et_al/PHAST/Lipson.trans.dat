@@ -1,0 +1,84 @@
+TITLE
+.       Pulse of solute (Example 1)
+.       Lipson, McCray and Thyne (2007) Using PHREEQC to simulate solute transport
+.       in fractured bedrock.  Ground water 45, 468–472.
+.       https://doi.org/10.1111/j.1745-6584.2007.00318.x
+.       X-length 3m,  Y-length 0.1m,  Z-length 0.25m
+SOLUTE_TRANSPORT true
+	-diffusivity  1e-009
+STEADY_FLOW true
+FREE_SURFACE_BC false
+SOLUTION_METHOD
+	-iterative_solver   true
+	-space_differencing 0.
+	-time_differencing  1.
+	-cross_dispersion   true
+UNITS
+	-time                             s
+	-horizontal_grid                  m
+	-vertical_grid                    m
+	-head                             m
+	-hydraulic_conductivity           m/s
+	-specific_storage                 1/m
+	-dispersivity                     m
+GRID
+	-uniform X 0 3.00 201
+	-uniform Y 0 0.10 2
+	-nonuniform Z
+		0    1.9e-4    2.1e-4    2.3e-4    0.0166667
+		0.05    0.1    0.16667    0.25
+	-snap X 1e-005
+	-snap Y 1e-005
+	-snap Z 1e-006
+	-chemistry_dimensions XZ
+	-print_orientation XY
+MEDIA
+	-box 0 0 0 3.0 0.1 0.00022 GRID
+		-Kx                       0.00531915
+		-Ky                       0.00531915
+		-Kz                       0.00531915
+		-porosity                 1
+		-specific_storage         0
+		-long_dispersivity        0.001
+		-horizontal_dispersivity  0.001
+		-vertical_dispersivity    0.000001
+	-box 0 0 0.00022 3.0 0.1 0.25 GRID
+		-Kx                       1.e-20
+		-Ky                       1.e-20
+		-Kz                       1.e-20
+		-porosity                 0.2
+		-specific_storage         0
+		-long_dispersivity        0.001
+		-horizontal_dispersivity  0.001
+		-vertical_dispersivity    0.000001
+		-tortuosity               0.44
+SPECIFIED_HEAD_BC
+	-box 0 0 0 0 0.1 0.25 GRID
+		-head
+			0	0.01
+		-associated_solution
+			0	2
+	-box 3.0 0 0 3.0 0.1 0.25 GRID
+		-head
+			0	0
+		-associated_solution
+			0	1
+HEAD_IC
+	-box 0 0 0 0.12 0.01 0.25 GRID
+		-head                     X 0.01 0 0 3.0
+CHEMISTRY_IC
+	-domain
+		-solution            1
+PRINT_FREQUENCY
+	-save_final_heads false
+	0
+		-HDF_chemistry          1    day
+		-xyz_chemistry          1    day
+		-hdf_intermediate       0
+	60
+		-velocities             end
+TIME_CONTROL
+	-time_step
+		0 1 day
+	-time_end
+		100 day

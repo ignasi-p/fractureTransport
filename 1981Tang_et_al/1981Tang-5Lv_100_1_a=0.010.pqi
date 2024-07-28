@@ -1,0 +1,159 @@
+
+#DATABASE D:/OneDrive/Documents/Geokemi/Modelling/PhreeqC/Databases/phreeqc_3.7.3.dat
+
+TITLE .
+!------------------------------------------------------------------------
+Script to reproduce the explicit single fracture model described in:
+   Tang, D.H., E.O. Frind, and E.A. Sudicky. 1981. Contaminant transport
+   in fractured porous media: Analytical solution for a single fracture,
+   Water Resources Research 17, no. 3: 555-564.
+   https://doi.org/10.1029/WR017i003p00555
+See Figs 9 and 10 in the reference.  This example is also described in:
+  - Weatherill, Graf, Simmons, Cook, Therrien and Reynolds (2008)
+    Discretizing the Fracture-Matrix Interface to Simulate Solute Transport,
+    Groundwater, 46: 606-615. https://doi.org/10.1111/j.1745-6584.2007.00430.x
+  - Watanabe and Kolditz (2015), Numerical stability analysis of two-dimensional
+    solute transport along a discrete fracture in a porous rock matrix,
+    Water Resour. Res., 51, 5855-5868, https://doi.org/10.1002/2015WR017164
+.
+A single row of mobile cells (fracture) and the bedrock matrix adjacent to
+the fracture is simulated as an array of five layers of stagnant cells.
+.
+The bedrock model is 0.8 m long, discretized into 100 cells, Delta-x = 0.008 m.
+As seen in Fig.2 of Weatherill et al (2008) and in Fig.1 of Watanabe and Kolditz (2015)
+the matrix depth is 0.05 m.
+.
+The groundwater velocity is 0.75 m/day.
+.
+Three tracers: input, fracture and rock matrix
+'Ti_', 'Tf_', and 'Tm_'.
+!------------------------------------------------------------------------
+
+SOLUTION_MASTER_SPECIES
+Ti_                 Ti_         0.0     Ti_                 1.
+Tf_                 Tf_         0.0     Tf_                 1.
+Tm_                 Tm_         0.0     Tm_                 1.
+
+SOLUTION_SPECIES
+Ti_ = Ti_
+        log_k   0.0
+Tf_ = Tf_
+        log_k   0.0
+Tm_ = Tm_
+        log_k   0.0
+CO3-2 + 10 H+ + 8 e- = CH4 + 3 H2O
+	-log_k   -9999   # eliminate the formation of methane
+	-delta_h  0
+
+USER_PRINT
+-start
+ 10 Vol_soln = SOLN_VOL # (liters)
+ 20 density = RHO # kg_s/L
+ 30 Water_mass = TOT("water") # kg_w
+ 40 Vol_soln = SOLN_VOL # L
+ 50 Mass_soln = Vol_soln * density
+100 PRINT ".*********************************************************************************"
+110 PRINT "density = ",TRIM(STR_F$(density,20,5))," kg/L"
+120 PRINT "Vol_soln = ",TRIM(STR_F$(Vol_soln,20,5))," L"
+130 PRINT "Mass_soln = ",TRIM(STR_F$(Mass_soln,20,5))," kg"
+140 PRINT "H2O = ",TRIM(STR_F$(Water_mass,20,5))," kg"
+200 yr = CALC_VALUE("Years")
+210 IF(yr > 3.155e-7) THEN PRINT "Years =",TRIM(STR_F$(yr,20,5)) 
+220 PRINT "STEP_NO =",STEP_NO, "   CELL_NO =",CELL_NO
+999 PRINT "-*********************************************************************************"
+-end
+
+CALCULATE_VALUES
+Hours
+  -start
+    10 SAVE SIM_TIME/3600
+  -end
+Days
+  -start
+    10 SAVE SIM_TIME/86400
+  -end
+Years
+  -start
+    10 SAVE SIM_TIME/31556952
+  -end
+
+SOLUTION 0  Inflowing water: Pure water with a tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Ti_       1e-6
+    -water    1 # kg
+END
+
+SOLUTION 1-101 Fracture water: Pure water with a tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Tf_       1e-6
+    -water    1 # kg
+END
+
+SOLUTION 102-601 Matrix water: Pure water with a tracer
+    temp      25
+    pH        7 charge
+    pe        0 O2(g) -28
+    redox     pe
+    units     mol/kgw
+    density   1 calculate
+    O(0)      0
+    Tm_       1e-6
+    -water    1 # kg
+END
+
+#PRINT
+#   -reset false
+#   -echo_input true
+#   -status false
+
+INCLUDE$ 1981Tang-5Lv_100_1_a=0.010_MIX.pqi
+
+TRANSPORT
+   -cells  100
+   -lengths  100*0.008  # m, total length = 0.8
+   -dispersivities  100*0.01 # m
+   -time_step 921.60 # s
+   -shifts 376
+   -flow_direction  forward
+   -boundary_conditions   flux  flux
+   -correct_disp true
+   -diffusion_coefficient 1e-09 # m2/s
+   -porosity 100*0.00120  500*0.35000
+   -stagnant   5
+   -punch_frequency   1
+   -print_frequency   75
+
+SELECTED_OUTPUT
+   -file   1981Tang-5Lv_100_1_a=0.010.tsv
+   -reset  false
+   -distance  true
+   -solution
+
+USER_PUNCH
+   -headings dist_z Ti_fr Tf_fr Tm_fr Days
+-start
+  10 IF (CELL_NO >= 0 AND CELL_NO <= 101) THEN PUNCH 0
+  15 IF (CELL_NO >= 102 AND CELL_NO <= 201) THEN PUNCH  0.0002
+  20 IF (CELL_NO >= 202 AND CELL_NO <= 301) THEN PUNCH  0.0005
+  25 IF (CELL_NO >= 302 AND CELL_NO <= 401) THEN PUNCH  0.0010
+  30 IF (CELL_NO >= 402 AND CELL_NO <= 501) THEN PUNCH  0.0017
+  35 IF (CELL_NO >= 502 AND CELL_NO <= 601) THEN PUNCH  0.0026
+  40 PUNCH TOT("Ti_")/1e-6,TOT("Tf_")/1e-6,TOT("Tm_")/1e-6,CALC_VALUE("Days")
+-end
+
+END
+PRINT
+   -reset true
+END

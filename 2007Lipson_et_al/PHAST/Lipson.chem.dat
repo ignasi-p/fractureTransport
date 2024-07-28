@@ -1,0 +1,27 @@
+TITLE
+.       Tracer flowing into a fracture
+SOLUTION_MASTER_SPECIES
+        A       A       0       A       1
+SOLUTION_SPECIES
+        A = A
+        log_k   0
+SOLUTION 1
+END
+SOLUTION 2
+        A        1.e-3 mol/kgw
+END
+SELECTED_OUTPUT
+# Following the initial call to PHREEQC, selected output for initial and transient conditions are written 
+#  to prefix.chem.xyz.tsv.
+# Frequently, the SELECTED_OUTPUT data block is located at the end of the 'prefix.chem.dat' file,
+#  following an END keyword, which results in no data being written to the selected_output file.
+        -file Lipson.dummy.sel
+        -reset false
+USER_PUNCH
+        -headings A
+10 PUNCH TOT("A")*1000
+20 REM This is equivalent to C/Co,
+30 REM when the concentration is equal to that of solution 2 (1e-3)
+40 REM then A=1, etc
+END
+
